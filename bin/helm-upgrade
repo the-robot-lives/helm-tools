@@ -514,24 +514,6 @@ _run_upgrade() {
   timeout="$(_get_timeout "$chart")"
   chart_dir="$HELM_DIR/$chart"
 
-  # Check upgrade policy — prompt if impacts require confirmation
-  read -ra _imp <<< "${PLAN_IMPACTS[$chart]:-}"
-  if (( ${#_imp[@]} > 0 )) && _policy_requires_prompt "$chart" "${_imp[@]}"; then
-    local impact_str
-    impact_str="$(_format_impacts "${_imp[@]}")"
-    echo ""
-    echo -e "  ${WARN} $release requires confirmation — impacts: $impact_str"
-    read -r -p "  Apply this upgrade? [y/n]: " _answer </dev/tty
-    case "$_answer" in
-      y|Y|yes) ;;
-      *)
-        info "Skipped $release (user declined)"
-        SKIPPED+=("$release")
-        return 0
-        ;;
-    esac
-  fi
-
   step "Upgrading $release → namespace=$ns timeout=$timeout"
 
   local helm_cmd=(helm upgrade --install "$release" "$chart_dir"
@@ -547,10 +529,6 @@ _run_upgrade() {
   if helm_output=$("${helm_cmd[@]}" 2>&1); then
     [[ -n "$helm_output" ]] && echo "$helm_output"
     ok "$release upgraded successfully"
-    local checksum
-    checksum="$(_chart_checksum "$chart_dir")"
-    _save_checksum "$release" "$checksum"
-    SUCCEEDED+=("$release")
     return 0
   fi
 
@@ -571,10 +549,6 @@ _run_upgrade() {
       if helm_output=$("${helm_cmd[@]}" 2>&1); then
         [[ -n "$helm_output" ]] && echo "$helm_output"
         ok "$release upgraded successfully (after conflict fix)"
-        local checksum
-        checksum="$(_chart_checksum "$chart_dir")"
-        _save_checksum "$release" "$checksum"
-        SUCCEEDED+=("$release")
         return 0
       else
         echo "$helm_output"
@@ -586,39 +560,134 @@ _run_upgrade() {
 
   echo "$helm_output"
   fail "$release upgrade FAILED"
-  FAILED+=("$release")
-  FAILED_NAMES+=("$release")
   return 1
 }
 
-CURRENT_TIER=-1
-TIER_FAILED=false
+# Temp directory for parallel upgrade results (one file per chart).
+_PARALLEL_DIR=$(mktemp -d)
+trap 'rm -rf "$_PARALLEL_DIR"; _cleanup_preview' EXIT INT TERM
 
+# Wrapper that runs _run_upgrade in a subshell and writes the outcome
+# to a temp file so the parent can collect results after waiting.
+_run_upgrade_parallel() {
+  local chart="$1"
+  local release
+  release="$(_get_release_name "$chart")"
+  local outfile="$_PARALLEL_DIR/${chart}.log"
+  local rcfile="$_PARALLEL_DIR/${chart}.rc"
+
+  (
+    _run_upgrade "$chart" 2>&1
+    echo $? > "$rcfile"
+  ) > "$outfile" 2>&1 &
+}
+
+# =============================================================================
+# Execute upgrades tier-by-tier, parallel within each tier
+#
+# Charts in the same tier have no inter-dependencies and can safely run
+# concurrently. The tier boundary acts as a barrier — all charts in tier N
+# must succeed before tier N+1 begins.
+#
+# Interactive policy prompts are collected BEFORE launching parallel jobs
+# so that user input doesn't interleave with background output.
+# =============================================================================
+
+# Group plan entries by tier
+declare -A TIER_CHARTS
 for entry in "${PLAN[@]}"; do
   tier="${entry%%:*}"
   chart="${entry#*:}"
+  TIER_CHARTS["$tier"]+="$chart "
+done
 
-  # New tier boundary — check if previous tier had failures
-  if [[ "$tier" != "$CURRENT_TIER" ]]; then
-    if $TIER_FAILED; then
-      warn "Tier $CURRENT_TIER had failures — skipping remaining tiers"
-      # Move remaining plan entries to failed
-      for remaining in "${PLAN[@]}"; do
-        rtier="${remaining%%:*}"
-        rchart="${remaining#*:}"
-        if (( rtier > CURRENT_TIER )); then
-          (( ${#FAILED_NAMES[@]} )) && _in_list "$rchart" "${FAILED_NAMES[@]}" && continue
-          (( ${#SUCCEEDED[@]} )) && _in_list "$rchart" "${SUCCEEDED[@]}" && continue
-          FAILED+=("$rchart (skipped — upstream tier failed)")
-        fi
-      done
-      break
+# Sort tier indices
+TIER_INDICES=($(echo "${!TIER_CHARTS[@]}" | tr ' ' '\n' | sort -n))
+
+for tier in "${TIER_INDICES[@]}"; do
+  read -ra charts <<< "${TIER_CHARTS[$tier]}"
+
+  # --- Pre-flight: collect policy confirmations interactively before forking ---
+  APPROVED_CHARTS=()
+  for chart in "${charts[@]}"; do
+    read -ra _imp <<< "${PLAN_IMPACTS[$chart]:-}"
+    if (( ${#_imp[@]} > 0 )) && _policy_requires_prompt "$chart" "${_imp[@]}"; then
+      _rel="$(_get_release_name "$chart")"
+      _imp_str="$(_format_impacts "${_imp[@]}")"
+      echo ""
+      echo -e "  ${WARN} $_rel requires confirmation — impacts: $_imp_str"
+      read -r -p "  Apply this upgrade? [y/n]: " _answer </dev/tty
+      case "$_answer" in
+        y|Y|yes) APPROVED_CHARTS+=("$chart") ;;
+        *)
+          info "Skipped $_rel (user declined)"
+          SKIPPED+=("$_rel")
+          continue
+          ;;
+      esac
+    else
+      APPROVED_CHARTS+=("$chart")
     fi
-    CURRENT_TIER="$tier"
-    TIER_FAILED=false
+  done
+
+  if (( ${#APPROVED_CHARTS[@]} == 0 )); then
+    continue
   fi
 
-  _run_upgrade "$chart" || TIER_FAILED=true
+  # --- Launch all tier charts in parallel ---
+  step "Tier $tier — upgrading ${#APPROVED_CHARTS[@]} chart(s) in parallel: ${APPROVED_CHARTS[*]}"
+  PIDS=()
+  PID_CHART=()
+
+  for chart in "${APPROVED_CHARTS[@]}"; do
+    _run_upgrade_parallel "$chart"
+    PIDS+=($!)
+    PID_CHART+=("$chart")
+  done
+
+  # --- Wait for all and collect results ---
+  TIER_FAILED=false
+  for i in "${!PIDS[@]}"; do
+    pid="${PIDS[$i]}"
+    chart="${PID_CHART[$i]}"
+    release="$(_get_release_name "$chart")"
+    outfile="$_PARALLEL_DIR/${chart}.log"
+    rcfile="$_PARALLEL_DIR/${chart}.rc"
+
+    wait "$pid" 2>/dev/null || true
+    rc=1
+    [[ -f "$rcfile" ]] && rc=$(cat "$rcfile")
+
+    # Stream the captured output
+    if [[ -f "$outfile" ]]; then
+      cat "$outfile"
+    fi
+
+    if (( rc == 0 )); then
+      SUCCEEDED+=("$release")
+      checksum="$(_chart_checksum "$HELM_DIR/$chart")"
+      _save_checksum "$release" "$checksum"
+    else
+      FAILED+=("$release")
+      FAILED_NAMES+=("$release")
+      TIER_FAILED=true
+    fi
+
+    rm -f "$outfile" "$rcfile"
+  done
+
+  # --- Tier gate: abort remaining tiers on failure ---
+  if $TIER_FAILED; then
+    warn "Tier $tier had failures — skipping remaining tiers"
+    for remaining_tier in "${TIER_INDICES[@]}"; do
+      (( remaining_tier <= tier )) && continue
+      read -ra remaining_charts <<< "${TIER_CHARTS[$remaining_tier]}"
+      for rchart in "${remaining_charts[@]}"; do
+        FAILED+=("$rchart (skipped — upstream tier failed)")
+      done
+    done
+    break
+  fi
 done
 
 # =============================================================================
