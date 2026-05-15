@@ -17,9 +17,12 @@
 #   helm-upgrade --env stage --include frontend           # staging upgrade for specific chart
 #   helm-upgrade --preview                                # show manifest diff vs live cluster
 #   helm-upgrade --env stage --include frontend --preview  # preview staging diff
+#   helm-upgrade --tiers 0,1                               # only infra + secrets tiers
 #   helm-upgrade --force                                  # upgrade even if unchanged
 #   helm-upgrade --force-conflicts                        # auto-fix server-side apply ownership conflicts
 #   helm-upgrade --dry-run                                # preview without applying
+#
+# At the confirmation prompt, press 'e' to edit the chart selection interactively.
 # =============================================================================
 set -euo pipefail
 
@@ -92,6 +95,7 @@ _chart_changed() {
 FILTER_NS=""
 INCLUDE_LIST=""
 EXCLUDE_LIST=""
+TIER_FILTER=""
 INTERACTIVE=false
 FORCE=false
 FORCE_CONFLICTS=false
@@ -109,6 +113,7 @@ Options:
                             Release names are prefixed: {ENV}-{chart}.
   --include CHART[,CHART…]  Whitelist — only upgrade these charts
   --exclude CHART[,CHART…]  Blacklist — skip these charts
+  --tiers N[,N…]            Only run specific tier indices (e.g. --tiers 0,1)
   --interactive, -i         Show toggle UI to select/deselect before upgrading
   --preview                 Show a diff of what would change vs the live cluster.
                             Works with --dry-run (diff only) or normal mode (diff then upgrade).
@@ -122,6 +127,8 @@ Options:
 Examples:
   helm-upgrade -n <namespace> --exclude redis
   helm-upgrade --include backend,frontend --force
+  helm-upgrade --tiers 0,1                         # only infra tiers
+  helm-upgrade --tiers 0,1 --force                  # force infra re-deploy
   helm-upgrade --interactive -n <namespace>
   helm-upgrade --env stage --include frontend
 
@@ -144,6 +151,7 @@ while [[ $# -gt 0 ]]; do
     --env)            ENV_NAME="$2"; shift 2 ;;
     --include)        INCLUDE_LIST="$2"; shift 2 ;;
     --exclude)        EXCLUDE_LIST="$2"; shift 2 ;;
+    --tiers)          TIER_FILTER="$2"; shift 2 ;;
     --interactive|-i) INTERACTIVE=true; shift ;;
     --preview)        PREVIEW=true; shift ;;
     --preview-tool)   PREVIEW=true; PREVIEW_TOOL="$2"; shift 2 ;;
@@ -369,11 +377,24 @@ _in_candidates() {
   return 1
 }
 
+# Parse --tiers filter into a lookup array
+IFS=',' read -ra TIER_FILTER_ARR <<< "$TIER_FILTER"
+
+_tier_allowed() {
+  local idx="$1"
+  [[ -z "$TIER_FILTER" ]] && return 0
+  for t in "${TIER_FILTER_ARR[@]}"; do
+    [[ "$t" == "$idx" ]] && return 0
+  done
+  return 1
+}
+
 # Ordered plan: array of "tier_index:chart" entries
 PLAN=()
 SKIPPED=()
 
 for tier_idx in "${!TIERS[@]}"; do
+  _tier_allowed "$tier_idx" || continue
   read -ra tier_charts <<< "${TIERS[$tier_idx]}"
   for chart in "${tier_charts[@]}"; do
     _in_candidates "$chart" || continue
@@ -459,13 +480,98 @@ if $DRY_RUN; then
 fi
 
 # =============================================================================
-# Confirm before executing
+# Confirm before executing (y = go, n = abort, e = edit selection)
 # =============================================================================
-read -r -p "  Proceed with upgrade? [y/n]: " answer </dev/tty
-case "$answer" in
-  y|Y|yes) ;;
-  *)       echo "Aborted."; exit 0 ;;
-esac
+_edit_plan() {
+  local EDIT_CHARTS=()
+  local EDIT_SELECTED=()
+  for entry in "${PLAN[@]}"; do
+    EDIT_CHARTS+=("${entry#*:}")
+    EDIT_SELECTED+=(true)
+  done
+
+  _show_edit_list() {
+    echo ""
+    printf "  %-4s %-30s %-18s %-6s %s\n" "" "CHART" "NAMESPACE" "TIER" "IMPACT"
+    printf "  %-4s %-30s %-18s %-6s %s\n" "" "─────" "─────────" "────" "──────"
+    for i in "${!EDIT_CHARTS[@]}"; do
+      local mark="[ ]"
+      [[ "${EDIT_SELECTED[$i]}" == "true" ]] && mark="[x]"
+      local chart="${EDIT_CHARTS[$i]}"
+      local ns tier_num
+      ns="$(_get_env_namespace "$chart")"
+      # Find tier number from PLAN
+      for _entry in "${PLAN[@]}"; do
+        if [[ "${_entry#*:}" == "$chart" ]]; then
+          tier_num="${_entry%%:*}"
+          break
+        fi
+      done
+      read -ra _imp <<< "${PLAN_IMPACTS[$chart]:-}"
+      local impact_str=""
+      (( ${#_imp[@]} > 0 )) && impact_str="$(_format_impacts "${_imp[@]}")"
+      printf "  %s %2d) %-28s %-18s %-6s " "$mark" "$((i+1))" "$chart" "$ns" "$tier_num"
+      echo -e "$impact_str"
+    done
+    echo ""
+    echo "  Toggle by number, 'a' = all, 'n' = none, Enter = confirm, 'q' = abort"
+  }
+
+  _show_edit_list
+
+  while true; do
+    read -r -p "  > " input </dev/tty
+    [[ "$input" == "q" ]] && { echo "Aborted."; exit 0; }
+    [[ -z "$input" ]] && break
+
+    if [[ "$input" == "a" ]]; then
+      for i in "${!EDIT_SELECTED[@]}"; do EDIT_SELECTED[$i]=true; done
+    elif [[ "$input" == "n" ]]; then
+      for i in "${!EDIT_SELECTED[@]}"; do EDIT_SELECTED[$i]=false; done
+    elif [[ "$input" =~ ^[0-9]+$ ]] && (( input >= 1 && input <= ${#EDIT_CHARTS[@]} )); then
+      local ti=$((input - 1))
+      if [[ "${EDIT_SELECTED[$ti]}" == "true" ]]; then
+        EDIT_SELECTED[$ti]=false
+      else
+        EDIT_SELECTED[$ti]=true
+      fi
+    fi
+
+    _show_edit_list
+  done
+
+  # Rebuild PLAN from selected
+  local NEW_PLAN=()
+  for i in "${!EDIT_CHARTS[@]}"; do
+    if [[ "${EDIT_SELECTED[$i]}" == "true" ]]; then
+      for _entry in "${PLAN[@]}"; do
+        if [[ "${_entry#*:}" == "${EDIT_CHARTS[$i]}" ]]; then
+          NEW_PLAN+=("$_entry")
+          break
+        fi
+      done
+    fi
+  done
+  PLAN=("${NEW_PLAN[@]}")
+}
+
+while true; do
+  read -r -p "  Proceed with upgrade? [y/n/e] (e=edit selection): " answer </dev/tty
+  case "$answer" in
+    y|Y|yes) break ;;
+    e|E|edit)
+      _edit_plan
+      if (( ${#PLAN[@]} == 0 )); then
+        echo "No charts selected."
+        exit 0
+      fi
+      echo ""
+      echo "  ${#PLAN[@]} chart(s) selected"
+      echo ""
+      ;;
+    *)       echo "Aborted."; exit 0 ;;
+  esac
+done
 
 # =============================================================================
 # Execute upgrades tier-by-tier
