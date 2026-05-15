@@ -249,7 +249,7 @@ _bump_version() {
 
   local new_version="${v_major}.${v_minor}.${v_patch}"
   yq -i ".version = \"${new_version}\"" "$chart_path/Chart.yaml"
-  info "Version bumped: ${current_version} → ${GRN}${new_version}${NC}"
+  info "Version bumped: ${current_version} → ${GRN}${new_version}${NC}" >&2
   echo "$new_version"
 }
 
