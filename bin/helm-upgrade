@@ -24,11 +24,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INFRA_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+K8_LIB_DIR="${K8_LIB_DIR:-$(cd "$SCRIPT_DIR/../../k8-lib" 2>/dev/null && pwd || echo "${HOME}/.local/share/k8-lib")}"
+INFRA_ROOT="${INFRA_ROOT:-$(pwd)}"
 STATE_DIR="$INFRA_ROOT/.helm-state"
 
-source "$SCRIPT_DIR/../k8-lib/common.sh"
-source "$SCRIPT_DIR/../k8-lib/helm-common.sh"
+source "$K8_LIB_DIR/bin/common.sh"
+source "$K8_LIB_DIR/bin/helm-common.sh"
 
 # =============================================================================
 # MD5 checksum — deterministic hash of all files in a chart directory
