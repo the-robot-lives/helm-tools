@@ -10,7 +10,7 @@ test:
 
 install:
 	@mkdir -p $(INSTALL_DIR)
-	@for f in bin/helm-upgrade bin/helm-rollback; do \
+	@for f in bin/helm-upgrade bin/helm-rollback bin/helm-publish; do \
 		install -m 755 "$$f" "$(INSTALL_DIR)/$$(basename $$f)"; \
 		echo "✓ Installed $$(basename $$f)"; \
 	done

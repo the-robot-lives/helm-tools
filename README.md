@@ -1,11 +1,11 @@
-# helm-tools — Helm Upgrade & Rollback
+# helm-tools — Helm Upgrade, Rollback & Publish
 
-Tiered Helm deployment orchestrator with change detection, environment overlays, and manifest preview.
+Tiered Helm deployment orchestrator with change detection, environment overlays, manifest preview, and OCI registry publishing.
 
 ## Installation
 
 ```bash
-make install    # Installs helm-upgrade, helm-rollback to ~/.local/bin
+make install    # Installs helm-upgrade, helm-rollback, helm-publish to ~/.local/bin
 ```
 
 ## Prerequisites
@@ -86,3 +86,52 @@ With `--env stage`, the orchestrator:
 1. Prefixes release names: `stage-apps-infra`
 2. Loads `values-stage.yaml` alongside `values.yaml`
 3. Resolves namespace from the overlay's `global.namespace`
+
+## Helm Publish (OCI Registry)
+
+Package and push Helm charts to an OCI registry (e.g., ghcr.io).
+
+### Configuration
+
+Set in `config.env`:
+
+```bash
+K8_HELM_OCI_REGISTRY="oci://ghcr.io/your-org/helm-charts"
+K8_HELM_REGISTRY_HOST="ghcr.io"
+K8_HELM_REGISTRY_USER="your-org"
+```
+
+Set `GITHUB_TOKEN` (or `K8_HELM_REGISTRY_PASSWORD`) in your environment.
+
+### Chart Discovery
+
+Charts are discovered from `project.yaml` `helm.charts[]` entries:
+
+```yaml
+# Flat project
+helm:
+  charts:
+    - name: my-chart
+      path: helm/my-chart
+
+# Composite project (incubator pattern)
+projects:
+  - domain: example.com
+    helm:
+      charts:
+        - name: my-chart
+          path: helm/my-chart
+          registry: oci://ghcr.io/alt-org/charts  # optional override
+```
+
+### Usage
+
+```bash
+helm-publish --list                     # Show all discoverable charts
+helm-publish codefresh                  # Publish specific chart (partial name ok)
+helm-publish --pick                     # Interactive multi-select
+helm-publish --all                      # Publish all charts
+helm-publish --bump patch               # Bump version before publishing
+helm-publish --dry-run                  # Package only, don't push
+helm-publish --force                    # Overwrite existing version
+```
