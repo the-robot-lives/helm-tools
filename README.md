@@ -17,9 +17,13 @@ make install    # Installs helm-upgrade, helm-rollback, helm-publish to ~/.local
 
 ## Configuration
 
-### Required (at project root)
+All configuration lives in a single `k8-util-config.yaml` at your project root (see [k8-lib README](../k8-lib/README.md) for setup).
 
-**tiers.yaml** — Deployment ordering. Tier N completes before tier N+1 starts:
+Every tool accepts `--config <path>` to specify an alternative config file.
+
+### Relevant Sections
+
+**`.tiers`** — Deployment ordering. Tier N completes before tier N+1 starts:
 
 ```yaml
 tiers:
@@ -31,18 +35,18 @@ tiers:
       - apps-infra
 ```
 
-### Optional (at project root)
+**`.namespace_overrides`** — Chart-to-namespace overrides:
 
-**namespaces.conf** — Chart-to-namespace overrides:
-
+```yaml
+namespace_overrides:
+  apps-infra: apps-ns
 ```
-apps-infra=apps-ns
-```
 
-**timeout-overrides.conf** — Per-chart timeout (default: 5m):
+**`.timeout_overrides`** — Per-chart timeout (default: 5m):
 
-```
-apps-infra=10m
+```yaml
+timeout_overrides:
+  apps-infra: 10m
 ```
 
 **.helm-state/upgrade-policy.yaml** — Confirmation rules for risky changes (auto-created on first use).
@@ -93,12 +97,19 @@ Package and push Helm charts to an OCI registry (e.g., ghcr.io).
 
 ### Configuration
 
-Set in `config.env`:
+Set in `k8-util-config.yaml`:
 
-```bash
-K8_HELM_OCI_REGISTRY="oci://ghcr.io/your-org/helm-charts"
-K8_HELM_REGISTRY_HOST="ghcr.io"
-K8_HELM_REGISTRY_USER="your-org"
+```yaml
+helm:
+  oci_registry: "oci://ghcr.io/your-org/helm-charts"
+  registry_host: ghcr.io
+```
+
+Set `registry_user` in `.k8-secrets.yaml`:
+
+```yaml
+helm:
+  registry_user: "your-org"
 ```
 
 Set `GITHUB_TOKEN` (or `K8_HELM_REGISTRY_PASSWORD`) in your environment.

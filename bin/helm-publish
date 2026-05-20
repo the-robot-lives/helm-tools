@@ -30,6 +30,19 @@ K8_LIB_DIR="${K8_LIB_DIR:-$(cd "$SCRIPT_DIR/../../k8-lib" 2>/dev/null && pwd || 
 INFRA_ROOT="${INFRA_ROOT:-$(pwd)}"
 export INFRA_ROOT
 
+# Pre-parse --config (must resolve before k8-lib sourcing)
+for _k8_arg in "$@"; do
+  case "$_k8_arg" in
+    --config=*) export K8_CONFIG="${_k8_arg#--config=}" ;;
+  esac
+done
+_k8_prev=""
+for _k8_arg in "$@"; do
+  [[ "$_k8_prev" == "--config" ]] && export K8_CONFIG="$_k8_arg"
+  _k8_prev="$_k8_arg"
+done
+unset _k8_arg _k8_prev
+
 source "$K8_LIB_DIR/bin/common.sh"
 source "$K8_LIB_DIR/bin/helm-publish-config.sh"
 
@@ -59,6 +72,7 @@ Options:
   --force         Overwrite existing version in registry without confirmation
   --yes / -y      Auto-confirm all prompts
   --verbose / -v  Show full helm command output
+  --config PATH   Use alternate k8-lib config file
   -h / --help     Show this help
 
 Environment:
@@ -87,6 +101,8 @@ while [[ $# -gt 0 ]]; do
         *) die "Invalid bump level: $BUMP_LEVEL (must be patch, minor, or major)" ;;
       esac
       shift 2 ;;
+    --config)     shift 2; continue ;;
+    --config=*)   shift; continue ;;
     -h|--help)    usage; exit 0 ;;
     -*)           die "Unknown flag: $1 (see --help)" ;;
     *)

@@ -31,6 +31,19 @@ K8_LIB_DIR="${K8_LIB_DIR:-$(cd "$SCRIPT_DIR/../../k8-lib" 2>/dev/null && pwd || 
 INFRA_ROOT="${INFRA_ROOT:-$(pwd)}"
 STATE_DIR="$INFRA_ROOT/.helm-state"
 
+# Pre-parse --config (must resolve before k8-lib sourcing)
+for _k8_arg in "$@"; do
+  case "$_k8_arg" in
+    --config=*) export K8_CONFIG="${_k8_arg#--config=}" ;;
+  esac
+done
+_k8_prev=""
+for _k8_arg in "$@"; do
+  [[ "$_k8_prev" == "--config" ]] && export K8_CONFIG="$_k8_arg"
+  _k8_prev="$_k8_arg"
+done
+unset _k8_arg _k8_prev
+
 source "$K8_LIB_DIR/bin/common.sh"
 source "$K8_LIB_DIR/bin/helm-common.sh"
 
@@ -122,6 +135,7 @@ Options:
   --force                   Upgrade even if chart content hasn't changed
   --force-conflicts         Auto-fix server-side apply field ownership conflicts
   --dry-run                 Preview what would be upgraded, don't apply
+  --config PATH             Use alternate k8-lib config file
   -h, --help                Show this help
 
 Examples:
@@ -155,6 +169,8 @@ while [[ $# -gt 0 ]]; do
     --interactive|-i) INTERACTIVE=true; shift ;;
     --preview)        PREVIEW=true; shift ;;
     --preview-tool)   PREVIEW=true; PREVIEW_TOOL="$2"; shift 2 ;;
+    --config)         shift 2; continue ;;
+    --config=*)       shift; continue ;;
     --force)          FORCE=true; shift ;;
     --force-conflicts) FORCE_CONFLICTS=true; shift ;;
     --dry-run)        DRY_RUN=true; shift ;;
