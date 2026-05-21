@@ -23,8 +23,7 @@ graph TB
     HR --> COM
     HR --> HC
 
-    HC --> TY[tiers.yaml]
-    HC --> NS[namespaces.conf]
+    HC --> CFG[k8-util-config.yaml]
 
     HU -->|helm upgrade --install| K8[Kubernetes Cluster]
     HR -->|helm rollback| K8
