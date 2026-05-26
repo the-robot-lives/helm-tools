@@ -92,7 +92,7 @@ _load_checksum() {
 # are tracked independently (e.g. frontend vs stage-frontend).
 _chart_changed() {
   local chart="$1"
-  local chart_dir="$HELM_DIR/$chart"
+  local chart_dir="$(_chart_dir "$chart")"
   [[ ! -d "$chart_dir" ]] && return 1
   local key
   key="$(_get_release_name "$chart")"
@@ -215,9 +215,8 @@ done
 # Discover charts and apply filters
 # =============================================================================
 ALL_CHARTS=()
-for dir in "$HELM_DIR"/*/; do
-  [[ -f "$dir/Chart.yaml" ]] || continue
-  ALL_CHARTS+=("$(basename "$dir")")
+for _name in "${!_CHART_DIRS[@]}"; do
+  ALL_CHARTS+=("$_name")
 done
 
 # Validate charts against TIERS
@@ -229,13 +228,13 @@ done
 
 for chart in "${ALL_CHARTS[@]}"; do
   if ! _in_list "$chart" "${ALL_TIER_CHARTS[@]}"; then
-    warn "Chart '$chart' exists at helm/$chart/ but is not in any TIERS entry in utils/lib/helm-common.sh"
+    warn "Chart '$chart' exists at $(_chart_dir "$chart") but is not in any TIERS entry"
   fi
 done
 
 for chart in "${ALL_TIER_CHARTS[@]}"; do
   if ! _in_list "$chart" "${ALL_CHARTS[@]}"; then
-    warn "TIERS references '$chart' but no Chart.yaml found at helm/$chart/"
+    warn "TIERS references '$chart' but no Chart.yaml found (searched helm dirs + overrides)"
   fi
 done
 
@@ -634,7 +633,7 @@ _run_upgrade() {
   release="$(_get_release_name "$chart")"
   ns="$(_get_env_namespace "$chart")"
   timeout="$(_get_timeout "$chart")"
-  chart_dir="$HELM_DIR/$chart"
+  chart_dir="$(_chart_dir "$chart")"
 
   step "Upgrading $release → namespace=$ns timeout=$timeout"
 
@@ -787,7 +786,7 @@ for tier in "${TIER_INDICES[@]}"; do
 
     if (( rc == 0 )); then
       SUCCEEDED+=("$release")
-      checksum="$(_chart_checksum "$HELM_DIR/$chart")"
+      checksum="$(_chart_checksum "$(_chart_dir "$chart")")"
       _save_checksum "$release" "$checksum"
     else
       FAILED+=("$release")
