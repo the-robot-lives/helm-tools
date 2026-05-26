@@ -16,7 +16,7 @@
 #
 # Configuration:
 #   Set K8_HELM_OCI_REGISTRY, K8_HELM_REGISTRY_HOST, K8_HELM_REGISTRY_USER
-#   in config.env or as environment variables. Registry auth is resolved in
+#   in .envrc.k8.dc or as environment variables. Registry auth is resolved in
 #   order: K8_HELM_REGISTRY_PASSWORD → GITHUB_TOKEN → gh auth token.
 #
 # Chart discovery:
@@ -117,11 +117,11 @@ done
 # =============================================================================
 
 if [[ -z "$HELM_OCI_REGISTRY" ]]; then
-  die "K8_HELM_OCI_REGISTRY is not set. Configure it in config.env or export it."
+  die "K8_HELM_OCI_REGISTRY is not set. Configure it in .envrc.k8.dc or export it."
 fi
 
 if [[ -z "$HELM_REGISTRY_USER" ]]; then
-  die "K8_HELM_REGISTRY_USER is not set. Configure it in config.env or export it."
+  die "K8_HELM_REGISTRY_USER is not set. Configure it in .envrc.k8.dc or export it."
 fi
 
 # =============================================================================

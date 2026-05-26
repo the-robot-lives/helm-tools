@@ -17,7 +17,7 @@ make install    # Installs helm-upgrade, helm-rollback, helm-publish to ~/.local
 
 ## Configuration
 
-All configuration lives in a single `k8-util-config.yaml` at your project root (see [k8-lib README](../k8-lib/README.md) for setup).
+All configuration lives in a single `infra-config.yaml` at your project root (see [k8-lib README](../k8-lib/README.md) for setup).
 
 Every tool accepts `--config <path>` to specify an alternative config file.
 
@@ -51,9 +51,9 @@ timeout_overrides:
 
 **.helm-state/upgrade-policy.yaml** — Confirmation rules for risky changes (auto-created on first use).
 
-### project.yaml Integration
+### infra-config.yaml Project Integration
 
-Charts are discovered from `project.yaml` `helm.*` fields:
+Charts are discovered from `infra-config.yaml` `project.helm.*` fields:
 
 ```yaml
 helm:
@@ -97,7 +97,7 @@ Package and push Helm charts to an OCI registry (e.g., ghcr.io).
 
 ### Configuration
 
-Set in `k8-util-config.yaml`:
+Set in `infra-config.yaml`:
 
 ```yaml
 helm:
@@ -105,18 +105,18 @@ helm:
   registry_host: ghcr.io
 ```
 
-Set `registry_user` in `.k8-secrets.yaml`:
+Set `registry_user` in `.envrc.k8.dc` secrets layer:
 
-```yaml
-helm:
-  registry_user: "your-org"
+```bash
+# In .envrc.k8.dc
+export K8_HELM_REGISTRY_USER="your-org"
 ```
 
 Set `GITHUB_TOKEN` (or `K8_HELM_REGISTRY_PASSWORD`) in your environment.
 
 ### Chart Discovery
 
-Charts are discovered from `project.yaml` `helm.charts[]` entries:
+Charts are discovered from `infra-config.yaml` `project.helm.charts[]` entries:
 
 ```yaml
 # Flat project
