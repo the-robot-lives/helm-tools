@@ -16,8 +16,8 @@
 #
 # Configuration:
 #   Set K8_HELM_OCI_REGISTRY, K8_HELM_REGISTRY_HOST, K8_HELM_REGISTRY_USER
-#   in config.env or as environment variables. GITHUB_TOKEN (or
-#   K8_HELM_REGISTRY_PASSWORD) must be set for registry authentication.
+#   in config.env or as environment variables. Registry auth is resolved in
+#   order: K8_HELM_REGISTRY_PASSWORD → GITHUB_TOKEN → gh auth token.
 #
 # Chart discovery:
 #   Charts are discovered from project.yaml files via helm.charts[] entries.
@@ -76,11 +76,12 @@ Options:
   -h / --help     Show this help
 
 Environment:
-  GITHUB_TOKEN                Registry auth token (required for push)
   K8_HELM_OCI_REGISTRY        OCI registry URL (e.g., oci://ghcr.io/org/charts)
   K8_HELM_REGISTRY_HOST       Registry hostname (default: ghcr.io)
   K8_HELM_REGISTRY_USER       Registry username
-  K8_HELM_REGISTRY_PASSWORD   Registry password (falls back to GITHUB_TOKEN)
+  K8_HELM_REGISTRY_PASSWORD   Registry password (highest priority)
+  GITHUB_TOKEN                Fallback auth token
+                              If neither is set, uses 'gh auth token' automatically
 USAGE
 }
 
@@ -385,9 +386,25 @@ publish_chart() {
 # =============================================================================
 
 _registry_login() {
-  local token="${K8_HELM_REGISTRY_PASSWORD:-$GITHUB_TOKEN}"
+  # If Helm has a credential store configured (osxkeychain, secretservice, etc.),
+  # assume it already has valid creds — explicit login conflicts with keychain
+  local helm_registry_config
+  helm_registry_config="$(helm env HELM_REGISTRY_CONFIG 2>/dev/null)"
+  if [[ -f "$helm_registry_config" ]] && grep -q '"credsStore"' "$helm_registry_config" 2>/dev/null; then
+    info "Using credential store for ${HELM_REGISTRY_HOST}"
+    return 0
+  fi
+
+  local token=""
+  if [[ -n "${K8_HELM_REGISTRY_PASSWORD:-}" ]]; then
+    token="$K8_HELM_REGISTRY_PASSWORD"
+  elif command -v gh &>/dev/null; then
+    token="$(gh auth token 2>/dev/null || true)"
+  elif [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    token="$GITHUB_TOKEN"
+  fi
   if [[ -z "${token:-}" ]]; then
-    die "No registry credentials. Set GITHUB_TOKEN or K8_HELM_REGISTRY_PASSWORD."
+    die "No registry credentials. Authenticate via 'gh auth login', or set K8_HELM_REGISTRY_PASSWORD."
   fi
 
   info "Authenticating to ${HELM_REGISTRY_HOST} as ${HELM_REGISTRY_USER}..."
