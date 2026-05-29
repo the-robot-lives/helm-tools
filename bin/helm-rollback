@@ -269,8 +269,31 @@ _select_revision() {
     valid_revs+=("$(echo "$json" | jq -r ".[$i].revision")")
   done
 
+  # Find last stable (most recent superseded) revision for default
+  local last_stable=""
+  for (( i=count-1; i>=0; i-- )); do
+    local status
+    status=$(echo "$json" | jq -r ".[$i].status")
+    if [[ "$status" == "superseded" ]]; then
+      last_stable=$(echo "$json" | jq -r ".[$i].revision")
+      break
+    fi
+  done
+
   while true; do
-    read -r -p "  Select target revision for $chart (revision number): " input </dev/tty
+    local prompt_hint=""
+    [[ -n "$last_stable" ]] && prompt_hint=" [0 = last stable (rev $last_stable)]"
+    read -r -p "  Select target revision for $chart (revision number$prompt_hint): " input </dev/tty
+    # Default / 0 → pick last stable (most recent superseded)
+    if [[ -z "$input" || "$input" == "0" ]]; then
+      if [[ -n "$last_stable" ]]; then
+        echo "$last_stable"
+        return 0
+      else
+        warn "No superseded (stable) revision found — enter a specific revision number." >&2
+        continue
+      fi
+    fi
     if [[ "$input" =~ ^[0-9]+$ ]] && _in_list "$input" "${valid_revs[@]}"; then
       echo "$input"
       return 0
