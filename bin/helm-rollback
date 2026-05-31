@@ -65,6 +65,9 @@ Options:
   -n, --namespace NS            Only charts in namespace NS
   --env ENV                     Target a non-production environment (e.g. stage).
                                 Uses {ENV}-{chart} release names and env namespace.
+  --stage                       Shorthand for --env stage
+  --prod                        Shorthand for --env prod
+  --dev                         Shorthand for --env dev
   --exclude CHART[,CHART…]      Skip these charts
   --preview                     Show manifest diff before rollback
   --preview-tool TOOL           Diff viewer: code, kdiff3, opendiff, meld, terminal.
@@ -98,6 +101,9 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -n|--namespace)   FILTER_NS="$2"; shift 2 ;;
     --env)            ENV_NAME="$2"; shift 2 ;;
+    --stage)          ENV_NAME="stage"; shift ;;
+    --prod)           ENV_NAME="prod"; shift ;;
+    --dev)            ENV_NAME="dev"; shift ;;
     --include)        INCLUDE_LIST="$2"; shift 2 ;;
     --exclude)        EXCLUDE_LIST="$2"; shift 2 ;;
     --back-to)        BACK_TO="$2"; shift 2 ;;
