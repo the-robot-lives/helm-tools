@@ -613,7 +613,7 @@ _is_conflict_error() {
 # Returns 0 (true) if at least one resource was fixed.
 _fix_field_ownership() {
   local chart="$1" ns="$2"
-  local resource_types=("deployment" "statefulset" "daemonset" "service" "configmap")
+  local resource_types=("deployment" "statefulset" "daemonset" "service" "configmap" "horizontalpodautoscaler" "scaledobject.keda.sh" "interceptorroute.http.keda.sh")
   local fixed=false
 
   for rtype in "${resource_types[@]}"; do
@@ -648,6 +648,7 @@ _run_upgrade() {
   local helm_cmd=(helm upgrade --install "$release" "$chart_dir"
        --namespace "$ns" --create-namespace
        --wait --timeout "$timeout")
+  $FORCE_CONFLICTS && helm_cmd+=(--force-conflicts)
   local _vfiles
   mapfile -t _vfiles < <(_get_values_files "$chart")
   for f in "${_vfiles[@]}"; do
@@ -675,7 +676,9 @@ _run_upgrade() {
 
     if _fix_field_ownership "$release" "$ns"; then
       info "Field ownership transferred to helm — retrying upgrade"
-      if helm_output=$("${helm_cmd[@]}" 2>&1); then
+      local retry_cmd=("${helm_cmd[@]}")
+      $FORCE_CONFLICTS && retry_cmd+=(--force-conflicts)
+      if helm_output=$("${retry_cmd[@]}" 2>&1); then
         [[ -n "$helm_output" ]] && echo "$helm_output"
         ok "$release upgraded successfully (after conflict fix)"
         return 0
