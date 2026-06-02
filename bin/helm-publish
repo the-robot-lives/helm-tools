@@ -17,10 +17,11 @@
 # Configuration:
 #   Set K8_HELM_OCI_REGISTRY, K8_HELM_REGISTRY_HOST, K8_HELM_REGISTRY_USER
 #   in .envrc.k8.dc or as environment variables. Registry auth is resolved in
-#   order: K8_HELM_REGISTRY_PASSWORD → GITHUB_TOKEN → gh auth token.
+#   order: K8_HELM_REGISTRY_PASSWORD -> GITHUB_TOKEN -> gh auth token.
 #
 # Chart discovery:
-#   Charts are discovered from project.yaml files via helm.charts[] entries.
+#   Charts are discovered from the merged infra-config.yaml project section:
+#   project.helm.charts[] or project.projects[].helm.charts[].
 #   See k8-lib/bin/helm-publish-config.sh for details.
 # =============================================================================
 set -euo pipefail
