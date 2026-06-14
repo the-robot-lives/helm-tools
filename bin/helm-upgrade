@@ -116,6 +116,7 @@ FORCE=false
 FORCE_CONFLICTS=false
 DRY_RUN=false
 PREVIEW=false
+HEADLESS=false
 
 _usage() {
   cat <<'USAGE'
@@ -129,6 +130,7 @@ Options:
   --stage                   Shorthand for --env stage
   --prod                    Shorthand for --env prod
   --dev                     Shorthand for --env dev
+  --headless                Non-interactive mode (auto-confirm, skip edit prompts)
   --include CHART[,CHART…]  Whitelist — only upgrade these charts
   --exclude CHART[,CHART…]  Blacklist — skip these charts
   --tiers N[,N…]            Only run specific tier indices (e.g. --tiers 0,1)
@@ -182,6 +184,7 @@ while [[ $# -gt 0 ]]; do
     --force)          FORCE=true; shift ;;
     --force-conflicts) FORCE_CONFLICTS=true; shift ;;
     --dry-run)        DRY_RUN=true; shift ;;
+    --headless)       HEADLESS=true; shift ;;
     -h|--help)        _usage ;;
     *)
       _maybe_chart="$1"
@@ -542,6 +545,9 @@ _edit_plan() {
 
   _show_edit_list
 
+  if $HEADLESS; then
+    echo "  (headless: accepting current selection)"
+  else
   while true; do
     read -r -p "  > " input </dev/tty
     [[ "$input" == "q" ]] && { echo "Aborted."; exit 0; }
@@ -562,6 +568,7 @@ _edit_plan() {
 
     _show_edit_list
   done
+  fi
 
   # Rebuild PLAN from selected
   local NEW_PLAN=()
@@ -578,23 +585,27 @@ _edit_plan() {
   PLAN=("${NEW_PLAN[@]}")
 }
 
-while true; do
-  read -r -p "  Proceed with upgrade? [y/n/e] (e=edit selection): " answer </dev/tty
-  case "$answer" in
-    y|Y|yes) break ;;
-    e|E|edit)
-      _edit_plan
-      if (( ${#PLAN[@]} == 0 )); then
-        echo "No charts selected."
-        exit 0
-      fi
-      echo ""
-      echo "  ${#PLAN[@]} chart(s) selected"
-      echo ""
-      ;;
-    *)       echo "Aborted."; exit 0 ;;
-  esac
-done
+if $HEADLESS; then
+  echo "  (headless: auto-confirming upgrade)"
+else
+  while true; do
+    read -r -p "  Proceed with upgrade? [y/n/e] (e=edit selection): " answer </dev/tty
+    case "$answer" in
+      y|Y|yes) break ;;
+      e|E|edit)
+        _edit_plan
+        if (( ${#PLAN[@]} == 0 )); then
+          echo "No charts selected."
+          exit 0
+        fi
+        echo ""
+        echo "  ${#PLAN[@]} chart(s) selected"
+        echo ""
+        ;;
+      *)       echo "Aborted."; exit 0 ;;
+    esac
+  done
+fi
 
 # =============================================================================
 # Execute upgrades tier-by-tier
@@ -748,7 +759,12 @@ for tier in "${TIER_INDICES[@]}"; do
       _imp_str="$(_format_impacts "${_imp[@]}")"
       echo ""
       echo -e "  ${WARN} $_rel requires confirmation — impacts: $_imp_str"
-      read -r -p "  Apply this upgrade? [y/n]: " _answer </dev/tty
+      if $HEADLESS; then
+        _answer="y"
+        echo "  (headless: auto-approving)"
+      else
+        read -r -p "  Apply this upgrade? [y/n]: " _answer </dev/tty
+      fi
       case "$_answer" in
         y|Y|yes) APPROVED_CHARTS+=("$chart") ;;
         *)
