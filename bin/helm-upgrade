@@ -659,6 +659,15 @@ _run_upgrade() {
   local helm_cmd=(helm upgrade --install "$release" "$chart_dir"
        --namespace "$ns" --create-namespace
        --wait --timeout "$timeout")
+  # Default to --reset-values so values.yaml is authoritative (a plain helm
+  # upgrade reuses prior values and silently ignores new image tags/config).
+  # Stateful charts in .helm_preserve_values keep --reuse-values instead.
+  if _should_preserve_values "$chart"; then
+    helm_cmd+=(--reuse-values)
+    info "  preserving runtime values (--reuse-values; in helm_preserve_values)"
+  else
+    helm_cmd+=(--reset-values)
+  fi
   $FORCE_CONFLICTS && helm_cmd+=(--force-conflicts)
   local _vfiles
   mapfile -t _vfiles < <(_get_values_files "$chart")
