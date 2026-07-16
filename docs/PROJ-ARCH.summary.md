@@ -23,4 +23,4 @@ Deploy tools discover charts from `paths.helm_dir` / `helm_scan_dirs` / `chart_p
 
 ## Ecosystem
 
-One of the Noizu monorepo `utilities/`; consumed by `deploy-service` / `docker-push --update-helm` flows against the repo-root `.infra-config.yaml`; charts live in the upstream noizu-infra repo.
+One of the Noizu monorepo `utilities/`; consumed by `deploy-service` / `docker-push --release` flows against the repo-root `.infra-config.yaml`; charts live in the upstream noizu-infra repo.

@@ -75,7 +75,7 @@ Environment overlays: `--env <name>` switches release names to `<env>-<chart>`, 
 
 ## Ecosystem Fit
 
-Part of the Noizu monorepo `utilities/` family. The repo root's `.infra-config.yaml` is the production config these tools consume there (tiers 0–9, `namespace_overrides`, `chart_path_overrides`); `helm-upgrade` is the deploy step invoked by `deploy-service` and after `docker-push --update-helm` bumps chart values. The Helm charts themselves live in the upstream `noizu-infra` repo — this package only orchestrates them.
+Part of the Noizu monorepo `utilities/` family. The repo root's `.infra-config.yaml` is the production config these tools consume there (tiers 0–9, `namespace_overrides`, `chart_path_overrides`); `helm-upgrade` is the deploy step invoked by `deploy-service` and after `docker-push --release` bumps chart values. The Helm charts themselves live in the upstream `noizu-infra` repo — this package only orchestrates them.
 
 ## Project Layout
 
