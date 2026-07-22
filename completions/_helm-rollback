@@ -1,0 +1,68 @@
+#compdef helm-rollback
+# zsh completion for helm-rollback.
+#
+# Install (either works):
+#   1. Copy onto $fpath as `_helm-rollback` (done by `make install-completions`),
+#      then ensure the directory is in fpath before compinit runs.
+#   2. Source this file directly from .zshrc (after compinit).
+
+_helm_rollback_charts() {
+  local f
+  f="$(_helm_rollback_config)"
+  [[ -z "$f" ]] && return
+  local -a charts
+  charts=(${(f)"$(yq '.tiers[].charts[]' "$f" 2>/dev/null)"})
+  _describe -t charts 'chart' charts
+}
+
+_helm_rollback_namespaces() {
+  local f
+  f="$(_helm_rollback_config)"
+  [[ -z "$f" ]] && return
+  local -a ns
+  ns=(${(f)"$(yq '.namespace_overrides[]' "$f" 2>/dev/null | sort -u)"})
+  _describe -t namespaces 'namespace' ns
+}
+
+# Walk up from $PWD to find .infra-config.yaml at the repo root.
+_helm_rollback_config() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -f "$dir/.infra-config.yaml" ]]; then
+      echo "$dir/.infra-config.yaml"
+      return
+    fi
+    dir="$(dirname "$dir")"
+  done
+}
+
+_helm-rollback() {
+  local curcontext="$curcontext" state line ret=1
+  typeset -A opt_args
+
+  _arguments -C \
+    '(-n --namespace)'{-n,--namespace}'=[filter to namespace]:namespace:_helm_rollback_namespaces' \
+    '--env=[target environment]:env:(dev stage prod)' \
+    '--stage[shorthand for --env stage]' \
+    '--prod[shorthand for --env prod]' \
+    '--dev[shorthand for --env dev]' \
+    '--include=[comma-separated chart list]:charts:_helm_rollback_charts' \
+    '--exclude=[comma-separated chart list]:charts:_helm_rollback_charts' \
+    '--back-to=[undo deploys after now - DURATION]:duration:' \
+    '--preview[show manifest diff before rollback]' \
+    '--preview-tool=[diff viewer]:tool:(code kdiff3 opendiff meld terminal)' \
+    '--dry-run[preview without executing]' \
+    '--force[skip confirmation prompt]' \
+    '--config=[alternate k8-lib config file]:config:_files' \
+    '-h[show help]' \
+    '--help[show help]' && ret=0
+
+  return ret
+}
+
+# Dual-mode: autoloaded from fpath (#compdef) vs sourced from .zshrc.
+if [[ "${funcstack[1]}" == "_helm-rollback" ]]; then
+  _helm-rollback "$@"
+elif (( ${+functions[compdef]} )); then
+  compdef _helm-rollback helm-rollback
+fi

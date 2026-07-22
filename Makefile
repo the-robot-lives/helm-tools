@@ -1,6 +1,6 @@
 INSTALL_DIR ?= $(HOME)/.local/bin
 
-.PHONY: compile test install
+.PHONY: compile test install install-completions
 
 compile:
 	@true
