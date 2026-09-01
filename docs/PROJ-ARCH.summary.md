@@ -8,7 +8,7 @@ Terminal utility package for Helm chart lifecycle on the Noizu k8s platform: tie
 - **bin/helm-rollback** — reverse-tier rollback via explicit include, unhealthy-pod auto-detect, or time-window `--back-to`.
 - **bin/helm-publish** — package + push charts to OCI registries; flat or composite publish targets; auth from `.envrc.k8.dc`/env/`gh auth token`.
 - **$K8_LIB_DIR/bin** — shared k8-lib (common.sh, helm-common.sh, helm-publish-config.sh, assist.sh).
-- **.helm-state/** — per-release checksums and publish state under `$INFRA_ROOT`.
+- **.helm-state/** — per-release checksums, publish state, and upgrade-policy.yaml under `$INFRA_ROOT`.
 
 ## Configuration
 

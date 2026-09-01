@@ -45,8 +45,8 @@ graph TB
 | `bin/helm-rollback` | Reverse-tier rollback in three modes: explicit `--include`, auto-detect (unhealthy pods + recent deploys), or time-window `--back-to <duration>`; interactive plan editor |
 | `bin/helm-publish` | Package + push charts to an OCI registry; auto-detect from CWD, `--pick`, `--all`, `--bump <level>`, `--dry-run`; auth resolved `K8_HELM_REGISTRY_PASSWORD` → `GITHUB_TOKEN` → `gh auth token` |
 | `$K8_LIB_DIR/bin/*.sh` | Shared k8-lib: `common.sh` (colors/logging), `helm-common.sh` (tiers, namespace lookup, env overlays, preview), `helm-publish-config.sh` (publish target discovery), `assist.sh` (agent-assist hook) |
-| `.helm-state/` (in `$INFRA_ROOT`) | Per-release MD5 checksums (skip-unchanged for `helm-upgrade`) and publish state for `helm-publish` |
-| `Makefile` | `make install` → `install -m 755 bin/*` to `$INSTALL_DIR` (default `~/.local/bin`); `compile`/`test` are no-ops |
+| `.helm-state/` (in `$INFRA_ROOT`) | Per-release MD5 checksums (skip-unchanged for `helm-upgrade`), publish state (`last-publish`, `publishes`), and `upgrade-policy.yaml` (impact-confirmation policy) |
+| `Makefile` | `make install` → `install -m 755 bin/*` to `$INSTALL_DIR` (default `~/.local/bin`) + bash/zsh completions from `completions/`; `compile`/`test` are no-ops |
 
 ## Configuration Model
 
@@ -77,6 +77,10 @@ Environment overlays: `--env <name>` switches release names to `<env>-<chart>`, 
 
 Part of the Noizu monorepo `utilities/` family. The repo root's `.infra-config.yaml` is the production config these tools consume there (tiers 0–9, `namespace_overrides`, `chart_path_overrides`); `helm-upgrade` is the deploy step invoked by `deploy-service` and after `docker-push --release` bumps chart values. The Helm charts themselves live in the upstream `noizu-infra` repo — this package only orchestrates them.
 
-## Project Layout
+## Project Layout & Related Docs
 
-See [PROJ-LAYOUT.md](PROJ-LAYOUT.md). `bin/` (three executables), `docs/`, `Makefile`, `README.md` (usage + full config reference).
+See [PROJ-LAYOUT.md](PROJ-LAYOUT.md) for the full tree: `bin/` (three executables), `completions/` (bash + zsh), `docs/`, `Makefile`, `README.md` (usage + full config reference).
+
+- [PROJ-SCHEMA.md](PROJ-SCHEMA.md) — state-file formats, `infra-config.yaml` surfaces, env/secret structure (no persistence layer)
+- [PROJ-HOWTO.md](PROJ-HOWTO.md) — task guides (`docs/howto/`: add a chart to the pipeline, deploy with an environment overlay)
+- [PROJ-FAQ.md](PROJ-FAQ.md) — frequently asked questions
