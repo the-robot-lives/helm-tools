@@ -31,6 +31,17 @@ K8_LIB_DIR="${K8_LIB_DIR:-${HOME}/.local/share/k8-lib}"
 INFRA_ROOT="${INFRA_ROOT:-$(pwd)}"
 STATE_DIR="$INFRA_ROOT/.helm-state"
 
+_K8_BASH_RUNTIME="${K8_LIB_DIR}/bin/bash-runtime.sh"
+[[ -f "$_K8_BASH_RUNTIME" ]] || _K8_BASH_RUNTIME="${SCRIPT_DIR}/../../k8-lib/bin/bash-runtime.sh"
+[[ -f "$_K8_BASH_RUNTIME" ]] && source "$_K8_BASH_RUNTIME"
+if declare -F _k8_require_bash4 >/dev/null; then
+  _k8_require_bash4 "$0" "$@"
+elif [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+  echo "ERROR: helm-upgrade requires Bash 4+; macOS /bin/bash 3.2 is not supported." >&2
+  exit 2
+fi
+unset _K8_BASH_RUNTIME
+
 # Pre-parse --config (must resolve before k8-lib sourcing)
 for _k8_arg in "$@"; do
   case "$_k8_arg" in
@@ -116,6 +127,7 @@ FORCE=false
 FORCE_CONFLICTS=false
 DRY_RUN=false
 PREVIEW=false
+HEADLESS=false
 
 _usage() {
   cat <<'USAGE'
@@ -129,6 +141,7 @@ Options:
   --stage                   Shorthand for --env stage
   --prod                    Shorthand for --env prod
   --dev                     Shorthand for --env dev
+  --headless                Non-interactive mode (auto-confirm, skip edit prompts)
   --include CHART[,CHART…]  Whitelist — only upgrade these charts
   --exclude CHART[,CHART…]  Blacklist — skip these charts
   --tiers N[,N…]            Only run specific tier indices (e.g. --tiers 0,1)
@@ -182,6 +195,7 @@ while [[ $# -gt 0 ]]; do
     --force)          FORCE=true; shift ;;
     --force-conflicts) FORCE_CONFLICTS=true; shift ;;
     --dry-run)        DRY_RUN=true; shift ;;
+    --headless)       HEADLESS=true; shift ;;
     -h|--help)        _usage ;;
     *)
       _maybe_chart="$1"
@@ -542,6 +556,9 @@ _edit_plan() {
 
   _show_edit_list
 
+  if $HEADLESS; then
+    echo "  (headless: accepting current selection)"
+  else
   while true; do
     read -r -p "  > " input </dev/tty
     [[ "$input" == "q" ]] && { echo "Aborted."; exit 0; }
@@ -562,6 +579,7 @@ _edit_plan() {
 
     _show_edit_list
   done
+  fi
 
   # Rebuild PLAN from selected
   local NEW_PLAN=()
@@ -578,23 +596,27 @@ _edit_plan() {
   PLAN=("${NEW_PLAN[@]}")
 }
 
-while true; do
-  read -r -p "  Proceed with upgrade? [y/n/e] (e=edit selection): " answer </dev/tty
-  case "$answer" in
-    y|Y|yes) break ;;
-    e|E|edit)
-      _edit_plan
-      if (( ${#PLAN[@]} == 0 )); then
-        echo "No charts selected."
-        exit 0
-      fi
-      echo ""
-      echo "  ${#PLAN[@]} chart(s) selected"
-      echo ""
-      ;;
-    *)       echo "Aborted."; exit 0 ;;
-  esac
-done
+if $HEADLESS; then
+  echo "  (headless: auto-confirming upgrade)"
+else
+  while true; do
+    read -r -p "  Proceed with upgrade? [y/n/e] (e=edit selection): " answer </dev/tty
+    case "$answer" in
+      y|Y|yes) break ;;
+      e|E|edit)
+        _edit_plan
+        if (( ${#PLAN[@]} == 0 )); then
+          echo "No charts selected."
+          exit 0
+        fi
+        echo ""
+        echo "  ${#PLAN[@]} chart(s) selected"
+        echo ""
+        ;;
+      *)       echo "Aborted."; exit 0 ;;
+    esac
+  done
+fi
 
 # =============================================================================
 # Execute upgrades tier-by-tier
@@ -648,6 +670,15 @@ _run_upgrade() {
   local helm_cmd=(helm upgrade --install "$release" "$chart_dir"
        --namespace "$ns" --create-namespace
        --wait --timeout "$timeout")
+  # Default to --reset-values so values.yaml is authoritative (a plain helm
+  # upgrade reuses prior values and silently ignores new image tags/config).
+  # Stateful charts in .helm_preserve_values keep --reuse-values instead.
+  if _should_preserve_values "$chart"; then
+    helm_cmd+=(--reuse-values)
+    info "  preserving runtime values (--reuse-values; in helm_preserve_values)"
+  else
+    helm_cmd+=(--reset-values)
+  fi
   $FORCE_CONFLICTS && helm_cmd+=(--force-conflicts)
   local _vfiles
   mapfile -t _vfiles < <(_get_values_files "$chart")
@@ -748,7 +779,12 @@ for tier in "${TIER_INDICES[@]}"; do
       _imp_str="$(_format_impacts "${_imp[@]}")"
       echo ""
       echo -e "  ${WARN} $_rel requires confirmation — impacts: $_imp_str"
-      read -r -p "  Apply this upgrade? [y/n]: " _answer </dev/tty
+      if $HEADLESS; then
+        _answer="y"
+        echo "  (headless: auto-approving)"
+      else
+        read -r -p "  Apply this upgrade? [y/n]: " _answer </dev/tty
+      fi
       case "$_answer" in
         y|Y|yes) APPROVED_CHARTS+=("$chart") ;;
         *)
