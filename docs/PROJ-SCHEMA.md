@@ -5,7 +5,7 @@
 > SQL schema, and no Liquibase changelogs**. This doc therefore covers the
 > artifacts it *does* define: on-disk state files, the `infra-config.yaml`
 > config surfaces it reads, chart values-overlay conventions, and
-> environment/secret structure.
+> environment/secret structure. Repo structure: [PROJ-LAYOUT.md](PROJ-LAYOUT.md).
 
 ## 1. Runtime state files
 

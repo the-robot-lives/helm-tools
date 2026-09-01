@@ -1,6 +1,6 @@
 # Project Schema — Summary
 
-**No persistence layer** — bash CLI suite; no DB/SQL/Liquibase. Artifacts documented: on-disk state files, `infra-config.yaml` config surfaces, values overlays, env/secret structure. Full detail: [PROJ-SCHEMA.md](PROJ-SCHEMA.md).
+**No persistence layer** — bash CLI suite; no DB/SQL/Liquibase. Artifacts documented: on-disk state files, `infra-config.yaml` config surfaces, values overlays, env/secret structure. Full detail: [PROJ-SCHEMA.md](PROJ-SCHEMA.md). Repo structure: [PROJ-LAYOUT.md](PROJ-LAYOUT.md).
 
 ## State files (`.helm-state/` in target repo root; untracked, recreatable)
 
