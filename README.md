@@ -1,213 +1,58 @@
-# helm-tools - Helm Upgrade, Rollback, and Publish
+# helm-utils
 
-Helm deployment and chart publishing tools built around shared chart discovery, tiered deployment, environment overlays, change detection, rollback, and OCI chart publishing.
+**Repo:** https://github.com/the-robot-lives/helm-tools
 
-## Install
+Helm deployment, rollback, and chart publishing tools driven by the shared `infra-config.yaml`.
 
-```bash
-make install
-```
+## What
 
-Installs:
+Three commands installed to `~/.local/bin`:
 
 | Command | Purpose |
 |---------|---------|
-| `helm-upgrade` | Deploy charts in tier order with change detection |
-| `helm-rollback` | Roll back releases by explicit target, revision, unhealthy pods, or recent deploy window |
+| `helm-upgrade` | Deploy charts in tier order with change detection (skips unchanged charts) |
+| `helm-rollback` | Roll back by explicit target, revision, unhealthy pods, or recent deploy window |
 | `helm-publish` | Package and push configured charts to an OCI registry |
 
-## Prerequisites
+## Why
 
-- `helm` 3.x
-- `kubectl`
-- `yq`
-- `jq`
+Manually orchestrating dozens of Helm charts across namespaces and environments is error-prone. helm-utils provides tiered ordering (tier N completes before N+1), checksum-based change detection, environment overlays, and declarative chart discovery — all from one merged config, so deploys are reproducible and reviewable.
 
-## Config Sources
+## Getting Started
 
-All Helm tools read the merged `infra-config.yaml`. Registry credentials for `helm-publish` come from `.envrc.k8.dc` or environment variables.
-
-Important distinction:
-
-- `helm-upgrade` and `helm-rollback` discover deployable chart directories from `paths.helm_dir`, `helm_scan_dirs`, and `chart_path_overrides`.
-- `helm-publish` discovers publishable chart targets from `project.helm.charts[]` or `project.projects[].helm.charts[]`.
-
-## Upgrade and Rollback Config
-
-### Chart Discovery
-
-```yaml
-paths:
-  helm_dir: helm
-
-helm_scan_dirs:
-  - helm/platform
-  - helm/apps
-  - random/testing/random/not-helm-dir
-
-chart_path_overrides:
-  easy-peasy: random/testing/random/not-helm-dir/easy-pasy
-```
-
-Use cases:
-
-| Need | Config |
-|------|--------|
-| Scan a whole category of charts | Add the directory to `helm_scan_dirs` |
-| Deploy a chart outside the standard tree | Add `chart_path_overrides.<name>` |
-| Give a chart a friendly alias | Use the alias as the `chart_path_overrides` key |
-| Keep a standard chart tree | Put charts under `paths.helm_dir` |
-
-Enabled commands:
+Prerequisites: `helm` 3.x, `kubectl`, `yq`, `jq`.
 
 ```bash
-helm-upgrade --include easy-peasy
-helm-rollback --include easy-peasy
+make install    # → ~/.local/bin (make install-completions for shell completions)
 ```
-
-### Tiers, Namespaces, and Timeouts
-
-```yaml
-tiers:
-  - name: Platform
-    tier: 0
-    charts:
-      - infisical
-      - ingress-nginx
-  - name: Applications
-    tier: 3
-    charts:
-      - easy-peasy
-
-namespace_overrides:
-  ingress-nginx: ingress-nginx
-  easy-peasy: testing
-
-timeout_overrides:
-  easy-peasy: 15m
-```
-
-Behavior:
-
-- Tier N completes before tier N+1 starts.
-- `namespace_overrides` wins over chart `values.yaml` namespace detection.
-- `timeout_overrides` wins over the default Helm timeout.
-- Charts not present in any tier can still be included directly, but tier config is the intended deployment plan.
-
-### Environment Overlays
-
-For non-production environments, use `--env <name>` and add matching values files:
-
-```text
-helm/apps/easy-peasy/values.yaml
-helm/apps/easy-peasy/values-stage.yaml
-```
-
-With `--env stage`, `helm-upgrade`:
-
-1. Uses release name `stage-<chart>`.
-2. Applies `values.yaml` plus `values-stage.yaml`.
-3. Includes only charts that have `values-stage.yaml`.
-4. Reads the environment namespace from the overlay when present.
-
-## Helm Publish Config
-
-Set the default OCI registry:
-
-```yaml
-helm:
-  oci_registry: oci://ghcr.io/my-org/helm-charts
-  registry_host: ghcr.io
-```
-
-Set auth through the environment or `.envrc.k8.dc`:
 
 ```bash
-export K8_HELM_REGISTRY_USER="my-org"
-export K8_HELM_REGISTRY_PASSWORD="..."
-```
-
-`helm-publish` also accepts `GITHUB_TOKEN` or `gh auth token` when publishing to GitHub Container Registry.
-
-### Flat Publish Targets
-
-```yaml
-project:
-  name: my-stack
-  helm:
-    charts:
-      - name: easy-peasy
-        path: random/testing/random/not-helm-dir/easy-pasy
-      - name: backend
-        path: helm/apps/backend
-        registry: oci://ghcr.io/other-org/charts
-```
-
-Enabled commands:
-
-```bash
-helm-publish --list
-helm-publish easy-peasy
-helm-publish --all
-```
-
-### Composite Publish Targets
-
-```yaml
-paths:
-  projects_dir: repos/incubator
-
-project:
-  name: incubator
-  type: composite
-  projects:
-    - domain: codefre.sh
-      base_path: projects/codefre.sh
-      helm:
-        charts:
-          - name: backend
-            path: helm/backend
-          - name: frontend
-            path: helm/frontend
-            registry: oci://ghcr.io/codefre/charts
-```
-
-Enabled commands:
-
-```bash
-helm-publish codefre.sh/backend
-helm-publish --pick
-```
-
-## Usage
-
-```bash
-helm-upgrade --list
-helm-upgrade --dry-run
-helm-upgrade --include easy-peasy
-helm-upgrade --exclude easy-peasy
-helm-upgrade --tier 0
-helm-upgrade --tiers 0,1
-helm-upgrade --interactive
-helm-upgrade --preview
-helm-upgrade --env stage
-helm-upgrade --force
+helm-upgrade --list | --dry-run | --interactive | --preview
+helm-upgrade --include easy-peasy | --exclude ... | --tier 0 | --tiers 0,1
+helm-upgrade --env stage | --force
 
 helm-rollback --include easy-peasy
 helm-rollback --env stage --include easy-peasy
 helm-rollback --back-to 30m
 
-helm-publish --list
+helm-publish --list | --all | --pick | --dry-run | --force
 helm-publish easy-peasy
-helm-publish --pick
-helm-publish --all
 helm-publish --bump patch
-helm-publish --dry-run
-helm-publish --force
 ```
 
-## State
+## How It Works
 
-`helm-upgrade` stores chart checksums in `.helm-state/{chart}.md5` after successful deploys. Re-running skips unchanged charts unless `--force` is set.
+- **Config**: everything reads the merged `infra-config.yaml`; registry creds come from `.envrc.k8.dc` or env (`K8_HELM_REGISTRY_USER`/`_PASSWORD`, or `GITHUB_TOKEN`/`gh auth token` for GHCR).
+- **Chart discovery** (upgrade/rollback): `paths.helm_dir`, `helm_scan_dirs`, and `chart_path_overrides` (keys act as friendly aliases).
+- **Publish discovery**: `project.helm.charts[]` or composite `project.projects[].helm.charts[]` under `paths.projects_dir`; default registry from `helm.oci_registry` / `registry_host`, per-chart `registry:` override.
+- **Tiers**: `tiers[].charts` with `namespace_overrides` (beats values.yaml detection) and `timeout_overrides`; charts outside tiers are still directly includable.
+- **Env overlays**: `--env stage` uses release name `stage-<chart>`, layers `values-stage.yaml` over `values.yaml`, includes only charts that have the overlay, and reads namespace from it.
+- **State**: checksums in `.helm-state/{chart}.md5` after successful deploys; publish state also lives under `.helm-state/` so re-pushes are detected. `--force` bypasses.
 
-`helm-publish` stores publish state under `.helm-state/` so repeated publishing can detect what has already been pushed.
+Full config examples and schema: `docs/` (PROJ-ARCH, PROJ-SCHEMA, PROJ-HOWTO).
+
+## Repo Layout
+
+- `bin/` — the three command entrypoints
+- `completions/` — shell completions
+- `docs/` — architecture, schema, howto docs
