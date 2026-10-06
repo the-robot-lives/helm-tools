@@ -107,6 +107,8 @@ monorepo `docs/secret-management.md`).
 |----------|---------|---------|
 | `K8_LIB_DIR` | all | Shared shell library location (default `~/.local/share/k8-lib`) |
 | `INFRA_ROOT` | all | Root of the deployment target repo (state + config resolution) |
+| `K8_HELM_OCI_REGISTRY` | helm-publish | OCI registry URL override (else `helm.oci_registry` from infra-config) |
+| `K8_HELM_REGISTRY_HOST` | helm-publish | Registry hostname override (else `helm.registry_host`; default `ghcr.io`) |
 | `K8_HELM_REGISTRY_USER` | helm-publish | OCI registry login |
 | `K8_HELM_REGISTRY_PASSWORD` | helm-publish | OCI registry secret (never echoed) |
 | `GITHUB_TOKEN` / `gh auth token` | helm-publish | Fallback auth for GHCR pushes |
@@ -120,7 +122,7 @@ flowchart LR
     IC --> HP[helm-publish]
     VO[values-<env>.yaml overlays] --> HU
     VO --> HR
-    ENV[K8_HELM_REGISTRY_USER / PASSWORD / GITHUB_TOKEN] --> HP
+    ENV[K8_HELM_OCI_REGISTRY / REGISTRY_HOST / REGISTRY_USER / PASSWORD / GITHUB_TOKEN] --> HP
     HU --> S[(.helm-state/ chart.md5)]
     HP --> S[(.helm-state/ last-publish + publishes)]
     HU --> K8[k8s cluster via helm]

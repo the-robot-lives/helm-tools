@@ -17,12 +17,16 @@ helm-utils/
 │   ├── PROJ-LAYOUT.md          #   This file
 │   ├── PROJ-LAYOUT.summary.md  #   Layout quick-reference companion
 │   ├── PROJ-HOWTO.md           #   Task-oriented how-to index (+ .summary.md companion)
+│   ├── PROJ-SCHEMA.md          #   Config/schema reference for infra-config.yaml consumption (+ .summary.md companion)
 │   ├── PROJ-FAQ.md             #   Frequently asked questions (+ .summary.md companion)
+│   ├── THREAT-MODEL.md         #   Security threat model — attack surface, STRIDE register (+ .summary.md companion)
 │   └── howto/                  #   Step-by-step task guides
 │       ├── add-chart-to-pipeline.md      # Wire a new chart into upgrade/publish
 │       └── deploy-environment-overlay.md # Non-prod env deploys via values-<env>.yaml
-├── .gitignore                  # Ignores editor swap files, .DS_Store, .env, .envrc.local
+├── .gitignore                  # Ignores editor swap files, .DS_Store, .env, .envrc.local, .claude/worktrees/
+├── AGENT.md / AGENTS.md        # Agent guidance (kept aligned)
 ├── CHANGELOG.md                # Release history
+├── CLAUDE.md                   # Claude Code guidance — monorepo rules, commands, worktree convention
 ├── Makefile                    # `make install` → bin/* to $INSTALL_DIR (default ~/.local/bin) + completions; compile/test are no-ops
 ├── README.md                   # Start here — install, prerequisites (helm 3.x, kubectl, yq, jq), config sources, usage
 └── merge-notes.md              # Working notes from a prior merge (historical, not user-facing)

@@ -69,13 +69,13 @@ Environment overlays: `--env <name>` switches release names to `<env>-<chart>`, 
 
 - **MD5 change detection**: avoids redundant Helm releases; checksums are per-release, so env overlays (e.g. `stage-*`) track independently of production.
 - **Tier-ordered execution**: infrastructure (tier 0) deploys before workloads; rollback reverses the order so app layers unwind before their dependencies.
-- **k8-lib via `$K8_LIB_DIR`, not relative paths**: installed scripts run from anywhere; the library is a shared dependency of all Noizu k8 utilities (repo `share/k8-lib/`, installed by `make install-utilities`).
+- **k8-lib via `$K8_LIB_DIR`, not relative paths**: installed scripts run from anywhere; the library is a shared dependency of all Noizu k8 utilities (source at monorepo `Portfolio/Utilities/share/k8-lib/`, installed by `make install-utilities`).
 - **`--config` pre-parse before sourcing**: k8-lib reads config during load, so the flag is scanned ahead of normal argument parsing.
 - **Minimal dependencies**: Bash + helm 3.x (OCI-capable) + kubectl + jq + yq; no compiled components.
 
 ## Ecosystem Fit
 
-Part of the Noizu monorepo `utilities/` family. The repo root's `.infra-config.yaml` is the production config these tools consume there (tiers 0–9, `namespace_overrides`, `chart_path_overrides`); `helm-upgrade` is the deploy step invoked by `deploy-service` and after `docker-push --release` bumps chart values. The Helm charts themselves live in the upstream `noizu-infra` repo — this package only orchestrates them.
+Part of the Noizu monorepo utilities fleet (`Portfolio/Utilities/source/*`, a git submodule; the former repo-root `utilities/` dual-path registration no longer exists). The repo root's `.infra-config.yaml` is the production config these tools consume there (tiers 0–9, `namespace_overrides`, `chart_path_overrides`); `helm-upgrade` is the deploy step invoked by `deploy-service` and after `docker-push --release` bumps chart values. The Helm charts themselves live in the upstream `noizu-infra` repo — this package only orchestrates them.
 
 ## Project Layout & Related Docs
 

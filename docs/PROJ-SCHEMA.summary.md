@@ -21,7 +21,7 @@
 
 ## Env / secrets (structure only; values via env or `.envrc.k8.dc`)
 
-`K8_LIB_DIR`, `INFRA_ROOT`, `K8_HELM_REGISTRY_USER`, `K8_HELM_REGISTRY_PASSWORD`, `GITHUB_TOKEN`/`gh auth token` (GHCR fallback)
+`K8_LIB_DIR`, `INFRA_ROOT`, `K8_HELM_OCI_REGISTRY`, `K8_HELM_REGISTRY_HOST`, `K8_HELM_REGISTRY_USER`, `K8_HELM_REGISTRY_PASSWORD`, `GITHUB_TOKEN`/`gh auth token` (GHCR fallback)
 
 ```mermaid
 flowchart LR

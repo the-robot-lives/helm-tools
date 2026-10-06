@@ -7,9 +7,11 @@ helm-utils/
 │   ├── helm-rollback           #   Reverse-tier rollback
 │   └── helm-publish            #   OCI chart publish
 ├── completions/                # bash + zsh completions (installed by make install)
-├── docs/                       # PROJ-ARCH, PROJ-LAYOUT, PROJ-HOWTO, PROJ-FAQ (+ summaries), howto/ guides
-├── .gitignore                  # swap files, .DS_Store, .env, .envrc.local
+├── docs/                       # PROJ-ARCH, PROJ-LAYOUT, PROJ-SCHEMA, PROJ-HOWTO, PROJ-FAQ, THREAT-MODEL (+ summaries), howto/ guides
+├── .gitignore                  # swap files, .DS_Store, .env, .envrc.local, .claude/worktrees/
+├── AGENT.md / AGENTS.md        # agent guidance (kept aligned)
 ├── CHANGELOG.md                # Release history
+├── CLAUDE.md                   # Claude Code guidance
 ├── Makefile                    # make install (bin + completions)
 ├── README.md                   # Start here
 └── merge-notes.md              # Historical merge working notes
