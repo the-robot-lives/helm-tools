@@ -3,6 +3,7 @@
 
 ## 2026-10-26
 - docs: doc-sweep refresh — PROJ-ARCH now documents the Bash 4+ gate (`bash-runtime.sh`), env shorthands/`--headless`, and the `--reset-values` default with `helm_preserve_values` opt-out; PROJ-SCHEMA documents the `helm_preserve_values` key; THREAT-MODEL attack-surface mermaid node fixed. (docs-only, direct to develop)
+- docs: seed doc-pointers — first `.meta/pointers.yaml` store with 10 full-UUID file markers on the load-bearing markdown (#4)
 
 ## [Unreleased]
 - No changes since the last milestone.
