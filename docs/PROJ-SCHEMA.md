@@ -57,7 +57,14 @@ tiers:                            # ordered deployment plan; tier N completes be
     charts: [<chart-name>, ...]
 namespace_overrides: { <chart>: <namespace> }   # beats values.yaml detection
 timeout_overrides:   { <chart>: <duration> }    # beats default helm timeout
+helm_preserve_values:             # charts upgraded --reuse-values instead of the
+  - <chart>                       # default --reset-values (retain live runtime state)
 ```
+
+Upgrade value handling: `helm-upgrade` passes `--reset-values` by default so the
+committed `values.yaml` is authoritative; charts listed in the root-level
+`helm_preserve_values` array get `--reuse-values` instead (for releases carrying
+generated state not present in `values.yaml`, e.g. Weaviate/Qdrant).
 
 ### Publish targets
 

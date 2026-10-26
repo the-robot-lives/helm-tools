@@ -4,10 +4,10 @@ Terminal utility package for Helm chart lifecycle on the Noizu k8s platform: tie
 
 ## Components
 
-- **bin/helm-upgrade** — tier-ordered upgrade with MD5 change detection, env overlays, interactive selection, manifest preview, SSA conflict auto-fix.
+- **bin/helm-upgrade** — tier-ordered upgrade with MD5 change detection, env overlays (`--env`, `--stage`/`--prod`/`--dev`), interactive selection, `--headless`, manifest preview, SSA conflict auto-fix, and a `--reset-values` default (values.yaml authoritative) with `helm_preserve_values` opt-out. Requires Bash 4+.
 - **bin/helm-rollback** — reverse-tier rollback via explicit include, unhealthy-pod auto-detect, or time-window `--back-to`.
 - **bin/helm-publish** — package + push charts to OCI registries; flat or composite publish targets; auth from `.envrc.k8.dc`/env/`gh auth token`.
-- **$K8_LIB_DIR/bin** — shared k8-lib (common.sh, helm-common.sh, helm-publish-config.sh, assist.sh).
+- **$K8_LIB_DIR/bin** — shared k8-lib (common.sh, helm-common.sh, helm-publish-config.sh, assist.sh, bash-runtime.sh Bash-4+ gate).
 - **.helm-state/** — per-release checksums, publish state, and upgrade-policy.yaml under `$INFRA_ROOT`.
 
 ## Configuration
@@ -17,6 +17,7 @@ Deploy tools discover charts from `paths.helm_dir` / `helm_scan_dirs` / `chart_p
 ## Key Decisions
 
 - Per-release MD5 checksums avoid redundant releases; env releases track independently.
+- `--reset-values` is the default so committed values.yaml wins over stale one-off `--set` values; `helm_preserve_values` opts stateful charts back into `--reuse-values`.
 - Tier ordering: infra first on upgrade, reversed on rollback.
 - k8-lib resolved via `$K8_LIB_DIR`, not relative paths — scripts run from anywhere.
 - Dependencies limited to Bash, helm 3.x, kubectl, jq, yq.

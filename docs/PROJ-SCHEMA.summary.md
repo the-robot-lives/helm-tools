@@ -15,7 +15,7 @@
 
 - Discovery: `paths.helm_dir`, `helm_scan_dirs[]`, `chart_path_overrides{alias→path}`
 - Ordering: `tiers[]{name, tier, charts[]}`
-- Overrides: `namespace_overrides{}`, `timeout_overrides{}`
+- Overrides: `namespace_overrides{}`, `timeout_overrides{}`, `helm_preserve_values[]` (charts that keep `--reuse-values` instead of the default `--reset-values`)
 - Publish: `helm.oci_registry`, `helm.registry_host`; `project.helm.charts[]` (flat) or `project.projects[]{domain, base_path, helm.charts[]}` (composite); keys `<chart>` / `<domain>/<chart>`
 - Env overlays: `<chart-dir>/values-<env>.yaml` gates `--env` deploys; release = `<env>-<chart>`
 

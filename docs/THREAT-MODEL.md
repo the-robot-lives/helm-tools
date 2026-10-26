@@ -8,9 +8,9 @@ Boundaries: operator shell → sourced code (`$K8_LIB_DIR/bin/*.sh`) → parsed 
 
 ```mermaid
 graph LR
-    OP[Operator shell] --> HU/HU2[bin/helm-upgrade | helm-rollback | helm-publish]
-    LIB["$K8_LIB_DIR (~/.local/share/k8-lib) — sourced code"] -.-> HU/HU2
-    CFG[(infra-config.yaml + Chart.yaml — unvalidated input)] --> HU/HU2
+    OP[Operator shell] --> HU["bin/helm-upgrade | helm-rollback | helm-publish"]
+    LIB["$K8_LIB_DIR (~/.local/share/k8-lib) — sourced code"] -.-> HU
+    CFG[(infra-config.yaml + Chart.yaml — unvalidated input)] --> HU
     ENV["K8_HELM_REGISTRY_PASSWORD / GITHUB_TOKEN / gh auth token"] --> HP[helm-publish]
     HU -->|helm upgrade/rollback, kubectl SSA| K8s[(Kubernetes cluster)]
     HP -->|helm registry login --password-stdin, helm push| OCI[(OCI registry)]
