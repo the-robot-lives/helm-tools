@@ -1,4 +1,5 @@
 # AGENTS.md — helm-utils
+〚📁:870b2ec5-c459-5254-8967-e5023a244f6e〛 helm-utils AGENTS guidance :: Agent guidance (kept aligned with AGENT.md).
 
 Guidance for **Codex**, **Grok**, **Cursor**, and other `AGENTS.md` / `AGENT.md` tools.
 

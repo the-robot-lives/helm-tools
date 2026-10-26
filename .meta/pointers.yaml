@@ -1,0 +1,122 @@
+---
+pointers:
+  069cbb60-3d6d-57b2-9bc1-1557f884f7fb:
+    created_at: 2026-10-26T21:55:18.285768Z
+    description: Navigable map of the repository structure.
+    file_path: docs/PROJ-LAYOUT.md
+    function: helm-utils repo layout
+    kind: file
+    line: 2
+    locations:
+      - file_path: docs/PROJ-LAYOUT.md
+        line: 2
+    token: 𓤬𓙐𔅫𓸻
+    updated_at: 2026-10-26T21:55:18.285768Z
+  111410b0-ddd6-5f48-8c90-3cd4b6c63b44:
+    created_at: 2026-10-26T21:55:18.285784Z
+    description: Config/state reference for the infra-config.yaml consumer (no persistence layer).
+    file_path: docs/PROJ-SCHEMA.md
+    function: helm-utils schema config reference
+    kind: file
+    line: 2
+    locations:
+      - file_path: docs/PROJ-SCHEMA.md
+        line: 2
+    token: 𓪓𓻛𓑱𓿤
+    updated_at: 2026-10-26T21:55:18.285784Z
+  1329a849-bb8a-57fd-a11a-a6e3575bd9a8:
+    created_at: 2026-10-26T21:55:18.285741Z
+    description: Task-oriented how-to index for the tool suite.
+    file_path: docs/PROJ-HOWTO.md
+    function: helm-utils task howto
+    kind: file
+    line: 2
+    locations:
+      - file_path: docs/PROJ-HOWTO.md
+        line: 2
+    token: 𓋸𓅗𓇟𓤨
+    updated_at: 2026-10-26T21:55:18.285741Z
+  2d161f16-eea4-556f-ab88-202e42350dc3:
+    created_at: 2026-10-26T21:55:18.285773Z
+    description: 'Claude Code guidance: monorepo rules, commands, worktree convention.'
+    file_path: CLAUDE.md
+    function: helm-utils CLAUDE guidance
+    kind: file
+    line: 2
+    locations:
+      - file_path: CLAUDE.md
+        line: 2
+    token: 𓥱𓦀𓮿𓝃
+    updated_at: 2026-10-26T21:55:18.285773Z
+  2dc7081c-dc7f-57f6-99f4-8fbe45cb3285:
+    created_at: 2026-10-26T21:55:18.285763Z
+    description: Release history and dated work log.
+    file_path: CHANGELOG.md
+    function: helm-utils changelog
+    kind: file
+    line: 2
+    locations:
+      - file_path: CHANGELOG.md
+        line: 2
+    token: 𓎕𓻂𓸪𓤵
+    updated_at: 2026-10-26T21:55:18.285763Z
+  6181751b-8be8-57e6-922b-85ffaabb7491:
+    created_at: 2026-10-26T21:55:18.285792Z
+    description: Anticipated why/when questions about the tools.
+    file_path: docs/PROJ-FAQ.md
+    function: helm-utils FAQ
+    kind: file
+    line: 2
+    locations:
+      - file_path: docs/PROJ-FAQ.md
+        line: 2
+    token: 𓵆𓷉𓎔𔓡
+    updated_at: 2026-10-26T21:55:18.285792Z
+  73d90c45-e1cf-54dc-9ab3-df801a669aa4:
+    created_at: 2026-10-26T21:55:18.285804Z
+    description: 'Entry point: install, prerequisites, usage, config sources.'
+    file_path: README.md
+    function: helm-utils README
+    kind: file
+    line: 2
+    locations:
+      - file_path: README.md
+        line: 2
+    token: 𔙉𔌱𔒆𓇤
+    updated_at: 2026-10-26T21:55:18.285804Z
+  83203254-4ffd-580c-874f-ae5b24684aee:
+    created_at: 2026-10-26T21:55:18.285788Z
+    description: 'Security threat model: trust boundaries and STRIDE register.'
+    file_path: docs/THREAT-MODEL.md
+    function: helm-utils threat model
+    kind: file
+    line: 2
+    locations:
+      - file_path: docs/THREAT-MODEL.md
+        line: 2
+    token: 𓪜𔍇𓓴𓠾
+    updated_at: 2026-10-26T21:55:18.285788Z
+  870b2ec5-c459-5254-8967-e5023a244f6e:
+    created_at: 2026-10-26T21:55:18.285796Z
+    description: Agent guidance (kept aligned with AGENT.md).
+    file_path: AGENTS.md
+    function: helm-utils AGENTS guidance
+    kind: file
+    line: 2
+    locations:
+      - file_path: AGENTS.md
+        line: 2
+    token: 𓻋𓤒𔖩𓒎
+    updated_at: 2026-10-26T21:55:18.285796Z
+  c1cd6791-7235-5078-a7c3-9e47b0b9f6d8:
+    created_at: 2026-10-26T21:55:18.285800Z
+    description: 'Architecture reference: components, config model, data flow.'
+    file_path: docs/PROJ-ARCH.md
+    function: helm-utils architecture
+    kind: file
+    line: 2
+    locations:
+      - file_path: docs/PROJ-ARCH.md
+        line: 2
+    token: 𔆯𓖾𔏬𓁸
+    updated_at: 2026-10-26T21:55:18.285800Z

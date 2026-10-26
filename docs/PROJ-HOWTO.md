@@ -1,4 +1,5 @@
 # helm-utils HOWTO
+〚📁:1329a849-bb8a-57fd-a11a-a6e3575bd9a8〛 helm-utils task howto :: Task-oriented how-to index for the tool suite.
 
 Task-oriented guides for the things you'll actually do with `helm-upgrade`, `helm-rollback`, and `helm-publish`. For *what it is* see [PROJ-ARCH.md](PROJ-ARCH.md); for *where things live* see [PROJ-LAYOUT.md](PROJ-LAYOUT.md).
 
