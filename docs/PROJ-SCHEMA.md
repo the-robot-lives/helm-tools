@@ -1,4 +1,5 @@
 # Project Schema — helm-utils
+〚📁:111410b0-ddd6-5f48-8c90-3cd4b6c63b44〛 helm-utils schema config reference :: Config/state reference for the infra-config.yaml consumer (no persistence layer).
 
 > **No persistence layer.** This project is a suite of standalone bash CLIs
 > (`helm-upgrade`, `helm-rollback`, `helm-publish`). It has **no database, no

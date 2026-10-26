@@ -1,4 +1,5 @@
 # helm-utils
+〚📁:73d90c45-e1cf-54dc-9ab3-df801a669aa4〛 helm-utils README :: Entry point: install, prerequisites, usage, config sources.
 
 **Repo:** https://github.com/the-robot-lives/helm-tools
 

@@ -1,4 +1,5 @@
 # CLAUDE.md — helm-utils
+〚📁:2d161f16-eea4-556f-ab88-202e42350dc3〛 helm-utils CLAUDE guidance :: Claude Code guidance: monorepo rules, commands, worktree convention.
 
 Helm operations helper (helm-upgrade etc.) against chart paths referenced by trl-infra .infra-config.yaml; shares k8-lib. Use for inventory/debug only — releases are git-driven (GHA bumps chart tags, ArgoCD syncs); never hand-edit chart tags to ship.
 

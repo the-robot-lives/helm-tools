@@ -1,4 +1,5 @@
 # helm-utils FAQ
+〚📁:6181751b-8be8-57e6-922b-85ffaabb7491〛 helm-utils FAQ :: Anticipated why/when questions about the tools.
 
 Anticipated why/when/compared-to-what questions. For *how* see [PROJ-HOWTO.md](PROJ-HOWTO.md); for *what it is* see [PROJ-ARCH.md](PROJ-ARCH.md).
 

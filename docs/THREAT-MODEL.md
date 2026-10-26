@@ -1,4 +1,5 @@
 # Threat Model — helm-utils
+〚📁:83203254-4ffd-580c-874f-ae5b24684aee〛 helm-utils threat model :: Security threat model: trust boundaries and STRIDE register.
 
 Local Bash CLI suite (helm-upgrade / helm-rollback / helm-publish) that drives Helm against the Noizu k8s platform. It runs **no network services** — every trust boundary is between an operator's workstation, files the tools read, shared shell libraries, and the cluster/OCI registry they act on with the operator's own credentials. Crown jewels: the k8s cluster (deploy/rollback power), OCI registry write access, and the registry/GHCR tokens in the environment. Grounding: [PROJ-ARCH.md](PROJ-ARCH.md) (components, data flow) · [PROJ-LAYOUT.md](PROJ-LAYOUT.md) (implementing directories) · [PROJ-SCHEMA.md](PROJ-SCHEMA.md) (config/state surfaces).
 

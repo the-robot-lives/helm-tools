@@ -1,4 +1,5 @@
 # helm-utils Architecture
+〚📁:c1cd6791-7235-5078-a7c3-9e47b0b9f6d8〛 helm-utils architecture :: Architecture reference: components, config model, data flow.
 
 ## Overview
 

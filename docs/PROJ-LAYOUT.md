@@ -1,4 +1,5 @@
 # Project Layout
+〚📁:069cbb60-3d6d-57b2-9bc1-1557f884f7fb〛 helm-utils repo layout :: Navigable map of the repository structure.
 
 Terminal utility package: Helm deployment tooling (upgrade, rollback, OCI publish) for the Noizu k8s platform. Installed to `~/.local/bin` via `make install`. All three scripts source the shared shell library from `$K8_LIB_DIR` (default `~/.local/share/k8-lib`) and read the merged `infra-config.yaml`.
 
