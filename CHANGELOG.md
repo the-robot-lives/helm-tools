@@ -1,6 +1,9 @@
 # Changelog — utilities/k8/helm-utils
 〚📁:2dc7081c-dc7f-57f6-99f4-8fbe45cb3285〛 helm-utils changelog :: Release history and dated work log.
 
+## 2026-10-28
+- docs: add AGENT-README.md (agent orientation)
+
 ## 2026-10-26
 - docs: doc-sweep refresh — PROJ-ARCH now documents the Bash 4+ gate (`bash-runtime.sh`), env shorthands/`--headless`, and the `--reset-values` default with `helm_preserve_values` opt-out; PROJ-SCHEMA documents the `helm_preserve_values` key; THREAT-MODEL attack-surface mermaid node fixed. (docs-only, direct to develop)
 - docs: seed doc-pointers — first `.meta/pointers.yaml` store with 10 full-UUID file markers on the load-bearing markdown (#4)
